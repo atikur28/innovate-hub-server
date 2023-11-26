@@ -27,6 +27,7 @@ async function run() {
     await client.connect();
 
     const usersCollection = client.db("innovateHub").collection("users");
+    const contestsCollection = client.db("innovateHub").collection("contests");
 
     // jwt
     app.post("/jwt", async (req, res) => {
@@ -63,8 +64,7 @@ async function run() {
     };
 
     // users
-    app.get("/users", verifyToken, verifyAdmin, async (req, res) => {
-      console.log(req.headers);
+    app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
@@ -121,10 +121,81 @@ async function run() {
       res.send(result);
     });
 
+    app.patch("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateUser = req.body;
+      const updatedDoc = {
+        $set: {
+          name: updateUser.userName,
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
     app.delete("/users/:id", verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await usersCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // contests
+    app.get("/contests", async (req, res) => {
+      const result = await contestsCollection.find().toArray();
+      res.send(result);
+    });
+
+    app.get("/contests/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await contestsCollection.findOne(query);
+      res.send(result);
+    });
+
+    app.post("/contests", verifyToken, async (req, res) => {
+      const contestInfo = req.body;
+      const result = await contestsCollection.insertOne(contestInfo);
+      res.send(result);
+    })
+
+    app.patch("/contests/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updatedStatus = req.body;
+      const updatedDoc = {
+        $set: {
+          status: updatedStatus.confirmation,
+        },
+      };
+      const result = await contestsCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    })
+
+    app.put("/contests/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const updatedInfo = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+           name: updatedInfo.name,
+           contestPrice: updatedInfo.contestPrice,
+           prizeMoney: updatedInfo.prizeMoney,
+           image: updatedInfo.image,
+           tag: updatedInfo.tag,
+           deadline: updatedInfo.deadline,
+           description: updatedInfo.description,
+           instruction: updatedInfo.instruction
+      };
+      const result = await contestsCollection.updateOne(filter, { $set: { ...updatedDoc } }, options);
+      res.send(result);
+ });
+
+    app.delete("/contests/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await contestsCollection.deleteOne(query);
       res.send(result);
     });
 
