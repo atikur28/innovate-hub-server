@@ -4,6 +4,7 @@ const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const port = process.env.PORT || 5000;
 
 // middleware
@@ -28,6 +29,7 @@ async function run() {
 
     const usersCollection = client.db("innovateHub").collection("users");
     const contestsCollection = client.db("innovateHub").collection("contests");
+    const registersCollection = client.db("innovateHub").collection("registers");
 
     // jwt
     app.post("/jwt", async (req, res) => {
@@ -167,6 +169,7 @@ async function run() {
       const updatedDoc = {
         $set: {
           status: updatedStatus.confirmation,
+          participated: updatedStatus.newCount
         },
       };
       const result = await contestsCollection.updateOne(filter, updatedDoc);
@@ -198,6 +201,27 @@ async function run() {
       const result = await contestsCollection.deleteOne(query);
       res.send(result);
     });
+
+    // payment
+    app.post("/create-payment-intent", async(req, res) => {
+      const {price} =req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ['card']
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
+
+    // registers
+    app.post("/registers", async (req, res) => {
+      const register = req.body;
+      const result = await registersCollection.insertOne(register);
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
