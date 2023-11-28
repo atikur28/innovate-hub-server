@@ -30,6 +30,7 @@ async function run() {
     const usersCollection = client.db("innovateHub").collection("users");
     const contestsCollection = client.db("innovateHub").collection("contests");
     const registersCollection = client.db("innovateHub").collection("registers");
+    const bestCreatorsCollection = client.db("innovateHub").collection("bestCreator");
 
     // jwt
     app.post("/jwt", async (req, res) => {
@@ -202,6 +203,12 @@ async function run() {
       res.send(result);
     });
 
+    // best creator
+    app.get("/bestCreator", async (req, res) => {
+      const result = await bestCreatorsCollection.find().toArray();
+      res.send(result);
+    })
+
     // payment
     app.post("/create-payment-intent", async(req, res) => {
       const {price} =req.body;
@@ -217,11 +224,41 @@ async function run() {
     })
 
     // registers
-    app.post("/registers", async (req, res) => {
+    app.get("/registers", verifyToken, async (req, res) => {
+      const result = await registersCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.post("/registers", verifyToken, async (req, res) => {
       const register = req.body;
       const result = await registersCollection.insertOne(register);
       res.send(result);
     })
+
+    app.patch("/registers/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updatedWinner = req.body;
+      const updatedDoc = {
+        $set: {
+          winner: updatedWinner.confirmation
+        },
+      };
+      const result = await registersCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    })
+
+    app.put("/registers/:id", verifyToken, async (req, res) => {
+      const id = req.params.id;
+      const updatedInfo = req.body;
+      const filter = { _id: new ObjectId(id) };
+      const options = { upsert: true };
+      const updatedDoc = {
+           status: updatedInfo.status,
+      };
+      const result = await registersCollection.updateOne(filter, { $set: { ...updatedDoc } }, options);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
