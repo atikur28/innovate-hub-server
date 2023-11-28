@@ -25,7 +25,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const usersCollection = client.db("innovateHub").collection("users");
     const contestsCollection = client.db("innovateHub").collection("contests");
@@ -224,18 +224,18 @@ async function run() {
     })
 
     // registers
-    app.get("/registers", verifyToken, async (req, res) => {
+    app.get("/registers", async (req, res) => {
       const result = await registersCollection.find().toArray();
       res.send(result);
     })
 
-    app.post("/registers", verifyToken, async (req, res) => {
+    app.post("/registers", async (req, res) => {
       const register = req.body;
       const result = await registersCollection.insertOne(register);
       res.send(result);
     })
 
-    app.patch("/registers/:id", verifyToken, async (req, res) => {
+    app.patch("/registers/:id", async (req, res) => {
       const id = req.params.id;
       const filter = {_id: new ObjectId(id)};
       const updatedWinner = req.body;
@@ -248,7 +248,7 @@ async function run() {
       res.send(result);
     })
 
-    app.put("/registers/:id", verifyToken, async (req, res) => {
+    app.put("/registers/:id", async (req, res) => {
       const id = req.params.id;
       const updatedInfo = req.body;
       const filter = { _id: new ObjectId(id) };
@@ -261,10 +261,10 @@ async function run() {
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
+    // await client.db("admin").command({ ping: 1 });
+    // console.log(
+    //   "Pinged your deployment. You successfully connected to MongoDB!"
+    // );
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
